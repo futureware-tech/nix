@@ -1,0 +1,6 @@
+disabled = [
+  # Use "statix list" to map Wnn into names.
+
+  # Currently not useful: need to better split .nix files first.
+  "repeated_keys" # a.b=, a.c= => a { b=, c= }
+]

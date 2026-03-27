@@ -16,6 +16,9 @@
     nixfmt-rfc-style.enable = true;
     deadnix.enable = true;
     nil.enable = true;
-    statix.enable = true; # Use: statix fix
+    statix = {
+      enable = true;
+      settings.config = "${./assets/statix.toml}";
+    }; # Use: statix fix
   };
 }
