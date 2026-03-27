@@ -27,6 +27,7 @@
         nix-gc = import ./modules/nix-gc.nix;
         futureware = import ./modules/futureware.nix;
         tools = import ./modules/tools.nix;
+        sshd = import ./modules/sshd.nix;
       };
 
       lib.pre-commit = import ./pre-commit.nix;
