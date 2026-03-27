@@ -5,5 +5,8 @@
   programs.git.config = {
     url."https://git.sheremet.ch/futureware-tech/nix.git".insteadOf =
       "https://github.com/futureware-tech/nix.git";
+    url."https://git.sheremet.ch/artem/dotfiles.git".insteadOf =
+      "https://github.com/dotdoom/dotfiles.git";
+    url."https://git.sheremet.ch/home/esphome.git".insteadOf = "https://github.com/dotdoom/esphome.git";
   };
 }
