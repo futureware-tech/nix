@@ -26,6 +26,7 @@
         nix-settings = import ./modules/nix-settings.nix;
         nix-gc = import ./modules/nix-gc.nix;
         futureware = import ./modules/futureware.nix;
+        tools = import ./modules/tools.nix;
       };
 
       lib.pre-commit = import ./pre-commit.nix;
