@@ -26,12 +26,12 @@ lib.mkMerge [
     };
   }
 
-  (lib.mkIf hasGitOption {
+  (lib.optionalAttrs hasGitOption {
     programs.git.enable = true;
     programs.git.config = gitConfig;
   })
 
-  (lib.mkIf (!hasGitOption) {
+  (lib.optionalAttrs (!hasGitOption) {
     # nix-darwin
     environment.etc."gitconfig".text = lib.generators.toGitINI gitConfig;
   })
