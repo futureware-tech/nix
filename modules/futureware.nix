@@ -1,6 +1,11 @@
 # This module is supposed to be used on internal FutureWare servers.
 
-{ lib, options, ... }:
+{
+  lib,
+  options,
+  pkgs,
+  ...
+}:
 
 let
   gitConfig = {
@@ -32,7 +37,21 @@ lib.mkMerge [
   })
 
   (lib.optionalAttrs (!hasGitOption) {
-    # nix-darwin
-    environment.etc."gitconfig".text = lib.generators.toGitINI gitConfig;
+    # This typically means nix-darwin, which doesn't have "programs.git".
+    #
+    # /etc/gitconfig is completely ignored by git built by nix-darwin, as it
+    # has its own gitconfig instead.
+    #
+    # Overlaying git package to add our stuff into that gitconfig causes
+    # half of the world to rebuild.
+    #
+    # We point at /etc/gitconfig using system variables for login shells
+    # and nix daemon, but other daemons and GUI applications will ignore these
+    # settings.
+    environment.etc."gitconfig".text = lib.generators.toGitINI (
+      gitConfig // { include.path = "${pkgs.git}/etc/gitconfig"; }
+    );
+    nix.envVars.GIT_CONFIG_SYSTEM = "/etc/gitconfig";
+    environment.variables.GIT_CONFIG_SYSTEM = "/etc/gitconfig";
   })
 ]
