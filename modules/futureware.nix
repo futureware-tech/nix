@@ -21,12 +21,11 @@ lib.mkMerge [
   {
     nix.settings = {
       substituters = [
-        "http://nix-cache.home.arpa"
-        # nix-community cachix server
-        # TODO: this, but through our cache -- "https://nix-community.cachix.org"
+        "http://nix-cache.home.arpa/cache.nixos.org"
+        "http://nix-cache.home.arpa/nix-community.cachix.org"
       ];
       trusted-public-keys = [
-        # "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       ];
     };
 
