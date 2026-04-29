@@ -43,7 +43,7 @@ lib.mkMerge [
 
         # Nix
         nix-output-monitor # nix build -> nom build
-        nixfmt-rfc-style
+        nixfmt
 
         # Software debug
         tcpdump
