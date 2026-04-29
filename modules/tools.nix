@@ -33,27 +33,50 @@ let
 in
 lib.mkMerge [
   {
-    environment.systemPackages = with pkgs; [
-      vim
-      git
-      jq
+    environment.systemPackages =
+      with pkgs;
+      [
+        vim
+        git
+        jq
+        file
 
-      # Nix
-      nix-output-monitor # nix build -> nom build
+        # Nix
+        nix-output-monitor # nix build -> nom build
+        nixfmt-rfc-style
 
-      # Software debug
-      tcpdump
-      lsof
-      ncdu
-      nmap
-      lnav
-      wakeonlan
+        # Software debug
+        tcpdump
+        lsof
+        ncdu
+        nmap
+        lnav
+        wakeonlan
 
-      # Hardware info and tunables
-      smartmontools # smartctl
-      usbutils # lsusb
-      pciutils # lspci
-    ];
+        # Hardware info and tunables
+        smartmontools # smartctl
+        usbutils # lsusb
+        pciutils # lspci
+      ]
+      ++ lib.optionals pkgs.stdenv.isLinux [
+        # Software debug
+        iotop
+        dool # dool --time --disk -D /dev/sde,/dev/sdf --top-bio --top-cpu --zfs-arc
+        strace
+        ltrace
+        smem # smem -tkP nginx
+
+        # Hardware info and tunables
+        parted
+        hdparm
+        efivar
+        efibootmgr
+        sg3_utils # sg_unmap
+        lm_sensors # sensors
+        nvme-cli
+        dmidecode
+        ethtool
+      ];
   }
 
   (lib.optionalAttrs hasHtopOption {
