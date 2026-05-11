@@ -41,6 +41,9 @@ lib.mkMerge [
         jq
         file
 
+        mosh
+        openssh
+
         # Nix
         nix-output-monitor # nix build -> nom build
         nixfmt
