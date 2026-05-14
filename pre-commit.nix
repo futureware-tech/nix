@@ -13,7 +13,7 @@
 
     # Nix
     flake-checker.enable = true;
-    nixfmt-rfc-style.enable = true;
+    nixfmt.enable = true;
     deadnix.enable = true;
     nil.enable = true;
     statix = {
