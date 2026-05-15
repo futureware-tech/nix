@@ -46,6 +46,7 @@ lib.mkMerge [
 
         # Nix
         nix-output-monitor # nix build -> nom build
+        nvd
         nixfmt
 
         # Software debug
