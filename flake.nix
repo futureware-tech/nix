@@ -28,6 +28,9 @@
         futureware = import ./modules/futureware.nix;
         tools = import ./modules/tools.nix;
         sshd = import ./modules/sshd.nix;
+        identities = {
+          _module.args.identities = import ./data/identities.nix;
+        };
       };
 
       lib.pre-commit = import ./pre-commit.nix;
