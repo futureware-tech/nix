@@ -1,4 +1,8 @@
-{ lib, options, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   nix.settings = {
     extra-experimental-features = [
@@ -17,12 +21,10 @@
     # build.
     automatic = true;
   }
-  // lib.optionalAttrs (options.nix.optimise ? dates) {
-    # NixOS
+  // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
     dates = lib.mkDefault "00:45";
   }
-  // lib.optionalAttrs (options.nix.optimise ? interval) {
-    # Darwin
+  // lib.optionalAttrs pkgs.stdenv.isDarwin {
     interval = lib.mkDefault {
       Hour = 0;
       Minute = 45;
