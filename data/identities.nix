@@ -2,6 +2,9 @@ let
   artemKey = {
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBxRBsFGa8OFbviYDGSAKLgfm/K2XUxvCo+31FW37yab";
   };
+  katarinaKey = {
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEsEXAcf8dBBfNJJzALsa/+hmQo+ysp6yO3VgQ8ynxkT";
+  };
 in
 rec {
   # API
@@ -75,6 +78,27 @@ rec {
         };
         yubikey-safe = {
           publicKey = "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIOd/DCO4lo8PH9EjKMtgGBGoc6SevLvTdWVlNbjrc6NsAAAAEXNzaDpnaXQtc2lnbmF0dXJl";
+          namespace = "git";
+        };
+      };
+    };
+    katarina = {
+      email = "kate.romanowskaya@gmail.com";
+      access = {
+        "ssh@jupiter".publicKey =
+          "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHQZQsriIA5bNwKc3Ini4KdYcndIPnjqQd2QbnqboN9xH/A15Uqz9RmBCXfGHwMBbwA6X0vohJXio5LVm7sY10s=";
+        katarina = katarinaKey;
+      };
+
+      sign = {
+        # Access keys as signers
+        katarina = katarinaKey // {
+          namespace = "git";
+        };
+
+        # Sign-only keys
+        "sign@jupiter" = {
+          publicKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAkUBxj2VoXYEDOcg47e4xqWk2u7Qv6vrEO1/B7E0mbtLYZ4BAGj+BuFiLGeFySbO3KP5uA93zV5UUMxOArwkn8=";
           namespace = "git";
         };
       };
