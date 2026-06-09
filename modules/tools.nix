@@ -40,6 +40,7 @@ lib.mkMerge [
         git
         jq
         file
+        ripgrep
 
         mosh
         openssh
