@@ -10,8 +10,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Prepare KVM for Cachix
-        run: sudo apt-get update && sudo apt-get install -y udev || true
       - name: Install Nix
         uses: cachix/install-nix-action@v26
         with:
