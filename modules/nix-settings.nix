@@ -10,6 +10,11 @@
       "flakes"
     ];
 
+    # Optimize for parallel building and fetching
+    max-jobs = "auto";
+    cores = 0;
+    http-connections = 50;
+
     # RPi builds can be slow due to compiling via binfmt.
     download-buffer-size = 1 * 1024 * 1024 * 1024;
   };
