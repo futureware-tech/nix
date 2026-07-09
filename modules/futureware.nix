@@ -30,6 +30,10 @@ lib.mkMerge [
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
         "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
       ];
+
+      # Limit impact in case any of these are unavailable.
+      connect-timeout = lib.mkDefault 5;
+      fallback = lib.mkDefault true;
     };
 
     # For fetch over SSH (repos where auth is required) or push.
