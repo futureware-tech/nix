@@ -22,11 +22,13 @@ lib.mkMerge [
   {
     nix.settings = {
       substituters = [
+        "http://nix-cache.home.arpa/attic/public"
         "http://nix-cache.home.arpa/cache.nixos.org"
         "http://nix-cache.home.arpa/nix-community.cachix.org"
         "http://nix-cache.home.arpa/cache.nixos-cuda.org"
       ];
       trusted-public-keys = [
+        "public:F/Ufy/WmDK+exxFlNsRf+p3Ir2b+Vj+N+zfGDFrRXQ8="
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
         "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
       ];
