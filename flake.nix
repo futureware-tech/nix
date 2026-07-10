@@ -23,11 +23,14 @@
     in
     {
       nixosModules = {
+        # TODO: export single, default module and enable features using
+        #       mkEnableOption in "fw.features" namespace.
         nix-settings = import ./modules/nix-settings.nix;
         nix-gc = import ./modules/nix-gc.nix;
         futureware = import ./modules/futureware.nix;
         tools = import ./modules/tools.nix;
         sshd = import ./modules/sshd.nix;
+        git-safe-sync = import ./modules/git-safe-sync.nix;
         identities = {
           _module.args.identities = import ./data/identities.nix;
         };
