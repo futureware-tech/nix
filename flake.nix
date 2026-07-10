@@ -42,6 +42,16 @@
         };
       });
 
+      packages = eachSystem (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          git-safe-sync = pkgs.callPackage ./packages/git-safe-sync.nix { };
+        }
+      );
+
       devShells = eachSystem (
         system:
         let
