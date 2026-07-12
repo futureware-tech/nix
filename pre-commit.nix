@@ -10,6 +10,8 @@
     end-of-file-fixer.enable = true;
     trim-trailing-whitespace.enable = true;
     ripsecrets.enable = true;
+    prettier.enable = true;
+    clang-format.enable = true;
 
     # Nix
     flake-checker.enable = true;
