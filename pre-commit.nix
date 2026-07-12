@@ -12,6 +12,7 @@
     ripsecrets.enable = true;
     prettier.enable = true;
     clang-format.enable = true;
+    black.enable = true;
 
     # Nix
     flake-checker.enable = true;
