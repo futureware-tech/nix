@@ -31,6 +31,7 @@
         tools = import ./modules/tools.nix;
         sshd = import ./modules/sshd.nix;
         git-safe-sync = import ./modules/git-safe-sync.nix;
+        nvidia = import ./modules/nvidia.nix;
         identities = {
           _module.args.identities = import ./data/identities.nix;
         };
