@@ -32,6 +32,11 @@
         sshd = import ./modules/sshd.nix;
         git-safe-sync = import ./modules/git-safe-sync.nix;
         nvidia = import ./modules/nvidia.nix;
+        smart = import ./modules/smart.nix;
+        systemd = import ./modules/systemd.nix;
+        boot = import ./modules/boot.nix;
+        zfs = import ./modules/zfs.nix;
+        tpm = import ./modules/tpm.nix;
         identities = {
           _module.args.identities = import ./data/identities.nix;
         };
