@@ -134,5 +134,4 @@
   # unattended after a sudden power loss or hard crash, instead of hanging
   # indefinitely in an emergency shell waiting for manual intervention.
   boot.zfs.forceImportRoot = true;
-  boot.zfs.forceImportAll = true;
 }
