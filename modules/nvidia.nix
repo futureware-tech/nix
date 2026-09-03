@@ -8,7 +8,7 @@ let
   # CUDA-enabled subset of packages (do not enable for everything to avoid
   # global recompile).
   cudaPkgs = import pkgs.path {
-    inherit (pkgs) system;
+    inherit (pkgs.stdenv.hostPlatform) system;
     config = {
       allowUnfree = true;
       cudaSupport = true;
