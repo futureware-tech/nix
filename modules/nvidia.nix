@@ -228,7 +228,53 @@ in
     };
 
     services.telegraf = lib.mkIf (config.services.telegraf.enable or false) {
-      extraConfig.inputs.nvidia_smi.bin_path = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
+      extraConfig.inputs = {
+        nvidia_smi.bin_path = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
+        # Workaround: Telegraf's nvidia_smi plugin does not yet emit clocks_event_reasons_counters
+        # (see https://github.com/influxdata/telegraf/issues/19404). Query them directly via
+        # nvidia-smi CSV output using the exact same measurement and field names as the native
+        # plugin. Remove this workaround when the upstream fix is deployed in Telegraf.
+        exec = [
+          {
+            commands = [
+              "${pkgs.writeShellScript "nvidia-throttle-counters" ''
+                ${config.hardware.nvidia.package.bin}/bin/nvidia-smi \
+                  --query-gpu=index,uuid,name,clocks_event_reasons_counters.sw_thermal_slowdown,clocks_event_reasons_counters.hw_thermal_slowdown,clocks_event_reasons_counters.sw_power_cap,clocks_event_reasons_counters.hw_power_brake_slowdown,clocks_event_reasons_counters.sync_boost \
+                  --format=csv,noheader,nounits | ${pkgs.gnused}/bin/sed 's/\[N\/A\]/0/g'
+              ''}"
+            ];
+            data_format = "csv";
+            csv_header_row_count = 0;
+            csv_column_names = [
+              "index"
+              "uuid"
+              "name"
+              "clocks_event_reasons_counters_sw_thermal_slowdown"
+              "clocks_event_reasons_counters_hw_thermal_slowdown"
+              "clocks_event_reasons_counters_sw_power_cap"
+              "clocks_event_reasons_counters_hw_power_brake_slowdown"
+              "clocks_event_reasons_counters_sync_boost"
+            ];
+            csv_column_types = [
+              "string"
+              "string"
+              "string"
+              "int"
+              "int"
+              "int"
+              "int"
+              "int"
+            ];
+            csv_tag_columns = [
+              "index"
+              "uuid"
+              "name"
+            ];
+            csv_trim_space = true;
+            name_override = "nvidia_smi";
+          }
+        ];
+      };
     };
   };
 }
