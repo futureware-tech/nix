@@ -24,10 +24,10 @@
     # build.
     automatic = true;
   }
-  // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
+  // lib.optionalAttrs (!pkgs.stdenv.hostPlatform.isDarwin) {
     dates = lib.mkDefault "00:45";
   }
-  // lib.optionalAttrs pkgs.stdenv.isDarwin {
+  // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
     interval = lib.mkDefault {
       Hour = 0;
       Minute = 45;

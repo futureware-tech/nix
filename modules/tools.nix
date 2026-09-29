@@ -63,7 +63,7 @@ lib.mkMerge [
         usbutils # lsusb
         pciutils # lspci
       ]
-      ++ lib.optionals pkgs.stdenv.isLinux [
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         # Software debug
         iotop
         dool # dool --time --disk -D /dev/sde,/dev/sdf --top-bio --top-cpu --zfs-arc
