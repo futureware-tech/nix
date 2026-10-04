@@ -105,6 +105,4 @@
   ++ lib.optional (config.fw.hardware.gpus.enable or false) config.hardware.nvidia.package.bin;
 
   users.users.telegraf.extraGroups = [ "disk" ];
-
-  networking.firewall.allowedTCPPorts = [ 9273 ];
 }
