@@ -37,6 +37,7 @@
         boot = import ./modules/boot.nix;
         zfs = import ./modules/zfs.nix;
         tpm = import ./modules/tpm.nix;
+        telegraf = import ./modules/telegraf.nix;
         identities = {
           _module.args.identities = import ./data/identities.nix;
         };
