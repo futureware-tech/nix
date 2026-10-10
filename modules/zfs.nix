@@ -147,13 +147,15 @@ in
     };
   };
 
+  # https://openzfs.github.io/openzfs-docs/Project%20and%20Community/FAQ.html#selecting-dev-names-when-creating-a-pool-linux
+  # Default /dev/disk/by-id doesn't work on VM, but /dev/disk/by-uuid could.
+  boot.zfs.devNodes = "/dev/disk/by-path";
+
   # Restrict the "rpool" import path to rootDisks, if specified. This prevents
   # boot failures when a foreign disk containing ZFS pool "rpool" is inserted.
   services.udev.extraRules = lib.mkIf hasRootPaths rpoolRules;
   boot.initrd.services.udev.rules = lib.mkIf hasRootPaths rpoolRules;
-  # https://openzfs.github.io/openzfs-docs/Project%20and%20Community/FAQ.html#selecting-dev-names-when-creating-a-pool-linux
-  # Default /dev/disk/by-id doesn't work on VM, but /dev/disk/by-uuid could.
-  boot.zfs.devNodes = lib.mkDefault (if hasRootPaths then "/dev/disk/rpool" else "/dev/disk/by-path");
+  boot.zfs.pools.rpool.devNodes = lib.mkIf hasRootPaths "/dev/disk/rpool";
 
   # We set forceImportRoot to true because our servers have exclusive access to
   # their local disks (no SANs/iSCSI). This guarantees they can recover and boot
