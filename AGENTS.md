@@ -154,17 +154,19 @@ take `_:` as their argument). The script requires signed commits
   ashift, xattr=sa, autoexpand, reservation, `chattr +i`). Consult it before
   changing ZFS defaults.
 - `modules/zfs.nix` also takes a `rootDisks ? [ ]` module argument (same style as
-  `boot.nix`) of full paths to whole disks or symlinks to them, any naming scheme
-  the host prefers (`by-path`, `by-id`, `by-uuid`, `/dev/sda`) — deliberately no
-  validation of the format. When non-empty a `zfs-rpool-links` oneshot (in the
-  initrd and in stage 2, with a `postDeviceCommands` fallback when initrd systemd
-  is off) symlinks them into `/dev/disk/rpool` numbered `1..N` like `/boot1
-/boot2` in `boot.nix`, and `boot.zfs.devNodes` points there, so `zpool import -d`
-  can never see a foreign pool with the same name.
+  `boot.nix`) of full paths to whole disks. Only entries starting with
+  `/dev/disk/by-path/` are used: the `ID_PATH` is parsed out of each and turned
+  into udev rules — in stage 2 and in the initrd — symlinking every partition of
+  the matching disk into `/dev/disk/rpool`, numbered `1..N` like `/boot1 /boot2`
+  in `boot.nix`. Whole disks are deliberately not linked: UEFI requires a boot
+  partition, so the root pool always lives on a partition. When such entries exist
+  `boot.zfs.devNodes` points there, so `zpool import -d` can never see a foreign
+  pool with the same name.
   `boot.zfs.devNodes` is a _directory_ (passed to `-d`), not a device list, and
   `forceImportRoot` does not resolve duplicate pool names — it only overrides
-  in-use/dirty checks. A wrong `rootDisks` entry makes the disk invisible to the
-  import, so the host will not boot.
+  in-use/dirty checks. A `rootDisks` entry in another naming scheme (`by-id`,
+  `by-uuid`, `/dev/sda`) is silently ignored, and a wrong `by-path` entry makes
+  the disk invisible to the import, so the host will not boot.
 - `modules/telegraf.nix` intentionally leaves `outputs.prometheus_client`
   without a listen port (secure by default; hosts put it behind a reverse proxy).
   Don't add a port here.

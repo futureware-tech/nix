@@ -85,7 +85,28 @@
     % zfs get all -s local -t filesystem -r "${POOLNAME?}"
 */
 
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  rootDisks ? [ ],
+  ...
+}:
+let
+  byPathPrefix = "/dev/disk/by-path/";
+  # Only by-path names carry enough information to build a udev rule, so other
+  # naming schemes are ignored. Each entry names a whole disk; the root pool is
+  # assumed to live on a partition of it, because UEFI needs a separate boot
+  # partition anyway.
+  rootPaths = map (lib.removePrefix byPathPrefix) (lib.filter (lib.hasPrefix byPathPrefix) rootDisks);
+  hasRootPaths = rootPaths != [ ];
+  rpoolRules = ''
+    # Partitions inherit ID_PATH from the parent disk.
+    SUBSYSTEM=="block", ENV{ID_PATH}=="", ENV{DEVTYPE}=="partition", IMPORT{parent}="ID_PATH"
+  ''
+  + lib.concatImapStrings (index: path: ''
+    SUBSYSTEM=="block", ENV{ID_PATH}=="${path}", ENV{DEVTYPE}=="partition", SYMLINK+="disk/rpool/${toString index}-part%n"
+  '') rootPaths;
+in
 {
   services.zfs = {
     trim = {
@@ -126,9 +147,14 @@
     };
   };
 
+  # Restrict the "rpool" import path to rootDisks, if specified. This prevents
+  # boot failures when a foreign disk containing ZFS pool "rpool" is inserted.
+  services.udev.extraRules = lib.mkIf hasRootPaths rpoolRules;
+  boot.initrd.services.udev.rules = lib.mkIf hasRootPaths rpoolRules;
   # https://openzfs.github.io/openzfs-docs/Project%20and%20Community/FAQ.html#selecting-dev-names-when-creating-a-pool-linux
   # Default /dev/disk/by-id doesn't work on VM, but /dev/disk/by-uuid could.
-  boot.zfs.devNodes = lib.mkDefault "/dev/disk/by-path";
+  boot.zfs.devNodes = lib.mkDefault (if hasRootPaths then "/dev/disk/rpool" else "/dev/disk/by-path");
+
   # We set forceImportRoot to true because our servers have exclusive access to
   # their local disks (no SANs/iSCSI). This guarantees they can recover and boot
   # unattended after a sudden power loss or hard crash, instead of hanging
