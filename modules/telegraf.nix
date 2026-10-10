@@ -15,7 +15,8 @@
       };
       outputs = {
         prometheus_client = {
-          listen = ":9273";
+          # Do not set port here, as some host may prefer to hide it behind a
+          # reverse proxy. Secure by default.
           metric_version = 2;
           # Maintain persistent HTTP keep-alive connections across Prometheus scrapes (e.g. 15s intervals).
           # Default is 10s which forces premature TCP teardown and frequent reconnects.
