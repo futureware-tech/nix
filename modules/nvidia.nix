@@ -15,6 +15,57 @@ let
       cudaCapabilities = config.fw.hardware.gpus.allCudaCapabilities;
     };
   };
+
+  # A card's PCI address is an accident of which slot it sits in, and cards do get
+  # moved, so anything that needs a bus address resolves it at boot rather than
+  # storing one in the config, where it would silently rot.
+  #
+  # nvidia-smi is not usable for this: the kernel module may not be loaded yet, it
+  # is a comparatively heavy process, and its `pci.bus_id` uses an 8-digit domain
+  # like 00000000:05:00.0, which does not match /sys/bus/pci/devices. The proc
+  # entries the driver publishes already give the address in the right form.
+  pciResolver = pkgs.writeShellApplication {
+    name = "gpu-pci";
+    runtimeInputs = with pkgs; [
+      coreutils
+      gnused
+    ];
+    text = ''
+      set -u
+
+      declare -A uuid_to_pci=()
+      for info in /proc/driver/nvidia/gpus/*/information; do
+        [ -f "$info" ] || continue
+        uuid="$(sed -n 's/^GPU UUID:[[:space:]]*//p' "$info")"
+        bus="$(sed -n 's/^Bus Location:[[:space:]]*//p' "$info")"
+        if [ -n "$uuid" ] && [ -n "$bus" ]; then
+          uuid_to_pci["$uuid"]="$bus"
+        fi
+      done
+
+      missing=0
+
+      # report <name> <uuid>
+      report() {
+        local name="$1" uuid="$2"
+        local pci="''${uuid_to_pci["$uuid"]:-}"
+        if [ -z "$pci" ]; then
+          echo "gpu-pci: $name ($uuid) is not present" >&2
+          missing=1
+          return
+        fi
+        printf '%s %s\n' "$name" "$pci"
+      }
+
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (name: gpu: ''
+          report ${lib.escapeShellArg name} ${lib.escapeShellArg gpu.uuid}
+        '') config.fw.hardware.gpus.devices
+      )}
+
+      exit "$missing"
+    '';
+  };
 in
 {
   options.fw.hardware.gpus.enable = lib.mkOption {
@@ -106,7 +157,20 @@ in
     description = "CUDA capabilities for all GPUs installed on this host (including compute=false, for stress testing/gpu-burn)";
   };
 
+  options.fw.hardware.gpus.pciResolver = lib.mkOption {
+    type = lib.types.nullOr lib.types.package;
+    default = null;
+    description = ''
+      Script printing "<gpu-name> <pci-address>" for every configured GPU that is
+      currently present, resolving each one by UUID. Exits non-zero if one is
+      missing. Consumers include virtualisation stacks that can only select a
+      physical device by bus address.
+    '';
+  };
+
   config = lib.mkIf config.fw.hardware.gpus.enable {
+    fw.hardware.gpus.pciResolver = pciResolver;
+
     fw.hardware.gpus.allCudaCapabilities = lib.unique (
       builtins.sort builtins.lessThan (
         builtins.filter (x: x != null) (
