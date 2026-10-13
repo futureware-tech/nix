@@ -38,7 +38,7 @@ in
       # nixpkgs has no gpu_burn for AMD: the package is CUDA-only and marked
       # broken without CUDA support. rocblas-bench does the same kind of
       # sustained SGEMM work and reports GFLOP/s. On the R9700 (gfx1201):
-      #   rocblas-bench -f sgemm -m 8192 -n 8192 -k 8192 -i 1000 -v 1
+      #   rocblas-bench -f gemm -r s -m 8192 -n 8192 -k 8192 -i 1000 -v 1
       #   watch -n1 rocm-smi --showpower --showtemp --showclocks
       pkgs.rocmPackages.rocblas.benchmark
     ];
