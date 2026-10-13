@@ -5,16 +5,9 @@
   ...
 }:
 let
-  # CUDA-enabled subset of packages (do not enable for everything to avoid
-  # global recompile).
-  cudaPkgs = import pkgs.path {
-    inherit (pkgs.stdenv.hostPlatform) system;
-    config = {
-      allowUnfree = true;
-      cudaSupport = true;
-      cudaCapabilities = config.fw.hardware.gpus.allCudaCapabilities;
-    };
-  };
+  gpuDevices = builtins.attrValues config.fw.hardware.gpus.devices;
+
+  nvidiaDevices = builtins.filter (gpu: gpu.vendor == "nvidia") gpuDevices;
 
   # A card's PCI address is an accident of which slot it sits in, and cards do get
   # moved, so anything that needs a bus address resolves it at boot rather than
@@ -24,6 +17,9 @@ let
   # is a comparatively heavy process, and its `pci.bus_id` uses an 8-digit domain
   # like 00000000:05:00.0, which does not match /sys/bus/pci/devices. The proc
   # entries the driver publishes already give the address in the right form.
+  #
+  # amdgpu has no equivalent proc tree, but it does publish a stable unique_id per
+  # card under /sys, which is what we store in place of an NVIDIA UUID.
   pciResolver = pkgs.writeShellApplication {
     name = "gpu-pci";
     runtimeInputs = with pkgs; [
@@ -33,24 +29,37 @@ let
     text = ''
       set -u
 
-      declare -A uuid_to_pci=()
+      declare -A id_to_pci=()
+
       for info in /proc/driver/nvidia/gpus/*/information; do
         [ -f "$info" ] || continue
-        uuid="$(sed -n 's/^GPU UUID:[[:space:]]*//p' "$info")"
+        id="$(sed -n 's/^GPU UUID:[[:space:]]*//p' "$info")"
         bus="$(sed -n 's/^Bus Location:[[:space:]]*//p' "$info")"
-        if [ -n "$uuid" ] && [ -n "$bus" ]; then
-          uuid_to_pci["$uuid"]="$bus"
+        if [ -n "$id" ] && [ -n "$bus" ]; then
+          id_to_pci["$id"]="$bus"
+        fi
+      done
+
+      for dev in /sys/bus/pci/devices/*; do
+        [ -f "$dev/unique_id" ] || continue
+        case "$(readlink -f "$dev/driver" 2>/dev/null || true)" in
+          */amdgpu) ;;
+          *) continue ;;
+        esac
+        id="$(sed 's/[[:space:]]*$//' "$dev/unique_id")"
+        if [ -n "$id" ]; then
+          id_to_pci["$id"]="''${dev##*/}"
         fi
       done
 
       missing=0
 
-      # report <name> <uuid>
+      # report <name> <id>
       report() {
-        local name="$1" uuid="$2"
-        local pci="''${uuid_to_pci["$uuid"]:-}"
+        local name="$1" id="$2"
+        local pci="''${id_to_pci["$id"]:-}"
         if [ -z "$pci" ]; then
-          echo "gpu-pci: $name ($uuid) is not present" >&2
+          echo "gpu-pci: $name ($id) is not present" >&2
           missing=1
           return
         fi
@@ -71,7 +80,7 @@ in
   options.fw.hardware.gpus.enable = lib.mkOption {
     type = lib.types.bool;
     default = config.fw.hardware.gpus.devices != { };
-    description = "Enable NVIDIA GPU drivers and configuration";
+    description = "Enable GPU drivers and configuration for the cards listed in fw.hardware.gpus.devices";
   };
 
   options.fw.hardware.gpus.devices = lib.mkOption {
@@ -80,9 +89,17 @@ in
     type = lib.types.attrsOf (
       lib.types.submodule {
         options = {
+          vendor = lib.mkOption {
+            type = lib.types.enum [
+              "nvidia"
+              "amd"
+            ];
+            default = "nvidia";
+            description = "Which vendor made the card; decides how it is identified and which tooling drives it";
+          };
           uuid = lib.mkOption {
             type = lib.types.str;
-            description = "UUID from nvidia-smi";
+            description = "Stable per-card identifier: the UUID from nvidia-smi, or the amdgpu sysfs unique_id for an AMD card";
           };
           model = lib.mkOption {
             type = lib.types.str;
@@ -157,6 +174,15 @@ in
     description = "CUDA capabilities for all GPUs installed on this host (including compute=false, for stress testing/gpu-burn)";
   };
 
+  options.fw.hardware.gpus.hasVendor = lib.mkOption {
+    type = lib.types.attrsOf lib.types.bool;
+    default = {
+      nvidia = false;
+      amd = false;
+    };
+    description = "Whether at least one configured GPU comes from each vendor";
+  };
+
   options.fw.hardware.gpus.pciResolver = lib.mkOption {
     type = lib.types.nullOr lib.types.package;
     default = null;
@@ -171,11 +197,13 @@ in
   config = lib.mkIf config.fw.hardware.gpus.enable {
     fw.hardware.gpus.pciResolver = pciResolver;
 
+    fw.hardware.gpus.hasVendor = lib.genAttrs [ "nvidia" "amd" ] (
+      vendor: builtins.any (gpu: gpu.vendor == vendor) gpuDevices
+    );
+
     fw.hardware.gpus.allCudaCapabilities = lib.unique (
       builtins.sort builtins.lessThan (
-        builtins.filter (x: x != null) (
-          builtins.map (gpu: gpu.cudaCapability) (builtins.attrValues config.fw.hardware.gpus.devices)
-        )
+        builtins.filter (x: x != null) (map (gpu: gpu.cudaCapability) gpuDevices)
       )
     );
 
@@ -218,20 +246,11 @@ in
       in
       builtins.mapAttrs mkPool config.fw.hardware.gpus.pools;
 
-    environment.systemPackages = with pkgs; [
-      nvtopPackages.nvidia
-
-      # TODO: move these 3 to stresstest.nix:
-
-      fio
-
-      # To run a CPU stress test for the AMD Ryzen 7 7700X (8-Core/16-Thread):
-      # stress --cpu 16 --vm 8 --io 16 --timeout 900
-      stress
-
-      # To run a GPU stress test:
-      # gpu_burn -m 99% 900
-      cudaPkgs.gpu-burn
+    environment.systemPackages = lib.optionals (!config.fw.hardware.gpus.hasVendor.amd) [
+      # nvtopPackages.nvidia cannot see AMD cards and .amd cannot see NVIDIA
+      # ones, so a host with both vendors gets the one variant that sees both
+      # from modules/amd.nix. Two nvtops in one environment would collide.
+      pkgs.nvtopPackages.nvidia
     ];
 
     nixpkgs.config.nvidia.acceptLicense = true;
@@ -277,9 +296,7 @@ in
       };
       script =
         let
-          limits = builtins.filter (gpu: gpu.powerLimit != null) (
-            builtins.attrValues config.fw.hardware.gpus.devices
-          );
+          limits = builtins.filter (gpu: gpu.powerLimit != null) nvidiaDevices;
         in
         if limits == [ ] then
           "true"

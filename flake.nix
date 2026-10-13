@@ -32,6 +32,8 @@
         sshd = import ./modules/sshd.nix;
         git-safe-sync = import ./modules/git-safe-sync.nix;
         nvidia = import ./modules/nvidia.nix;
+        amd = import ./modules/amd.nix;
+        stress = import ./modules/stress.nix;
         smart = import ./modules/smart.nix;
         systemd = import ./modules/systemd.nix;
         boot = import ./modules/boot.nix;
