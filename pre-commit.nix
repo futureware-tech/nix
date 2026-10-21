@@ -11,7 +11,19 @@
     trim-trailing-whitespace.enable = true;
     ripsecrets.enable = true;
     prettier.enable = true;
-    clang-format.enable = true;
+    clang-format = {
+      enable = true;
+      # git-hooks.nix copies upstream's types_or, which includes json and
+      # javascript. clang-format reformats those too (expanding short arrays),
+      # which fights prettier: each hook rewrites what the other just wrote
+      # and neither converges. Restrict it to the languages it is for.
+      types_or = [
+        "c"
+        "c++"
+        "cuda"
+        "objective-c"
+      ];
+    };
     black.enable = true;
 
     # Nix
