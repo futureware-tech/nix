@@ -2,11 +2,15 @@ name: Nix Flake Check
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # only on github
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

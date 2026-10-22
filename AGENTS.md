@@ -27,8 +27,11 @@ host config) plus the package, check, and devShell derivations, so it catches
 eval-time breakage in a module but not misbehaviour once combined with a real
 host config. Only the host's own systems are checked in their own repos.
 
-CI (`.github/workflows/check.yaml`) runs `nix flake check` on `ubuntu-latest`
-only. Nothing here is verified against nix-darwin or aarch64 in CI.
+CI runs `nix flake check` on `x86_64-linux` only, from two twin workflow files:
+`.github/workflows/check.yaml` on GitHub's `ubuntu-latest`, and
+`.gitea/workflows/check.yaml` on the self-hosted `nixos-futureware` runner. Each
+platform reads only its own directory, so a change to what is checked has to be
+made in both. Nothing here is verified against nix-darwin or aarch64 in CI.
 
 ### Tooling / formatting
 
