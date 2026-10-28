@@ -85,8 +85,10 @@ rec {
     katarina = {
       email = "kate.romanowskaya@gmail.com";
       access = {
-        "ssh@jupiter".publicKey =
+        "ssh@jupiter-old".publicKey =
           "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHQZQsriIA5bNwKc3Ini4KdYcndIPnjqQd2QbnqboN9xH/A15Uqz9RmBCXfGHwMBbwA6X0vohJXio5LVm7sY10s=";
+        "ssh@jupiter".publicKey =
+          "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKQQVLiWmEuJoV1MVKv2815vEEGZufpXTO6xw+jwavk/UkSCe+XT565Fxd11TQ++KAYVRAh/o5OLuwrPA3qGCwY=";
         katarina = katarinaKey;
       };
 
@@ -97,8 +99,12 @@ rec {
         };
 
         # Sign-only keys
-        "sign@jupiter" = {
+        "sign@jupiter-old" = {
           publicKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAkUBxj2VoXYEDOcg47e4xqWk2u7Qv6vrEO1/B7E0mbtLYZ4BAGj+BuFiLGeFySbO3KP5uA93zV5UUMxOArwkn8=";
+          namespace = "git";
+        };
+        "sign@jupiter" = {
+          publicKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAZVA2YNOaYF2snI0OYYWcs5YVwh79Oj5i7D83lUpBQ/U6iljtv1z/lZNgpQXNH1YGklqKpZK1FGmZBZFEyiux4=";
           namespace = "git";
         };
       };
