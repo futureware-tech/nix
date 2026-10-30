@@ -41,6 +41,7 @@ lib.mkMerge [
         jq
         file
         ripgrep
+        binutils # strings
 
         mosh
         openssh
