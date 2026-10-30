@@ -49,8 +49,10 @@ checks) and consumed by `checks.*.pre-commit-check` and `devShells.default`.
   trailing commas, `final:`/`_prev:` underscore-prefixed unused args) is the
   house style — match it rather than hand-formatting.
 - statix rules come from `assets/statix.toml`, which disables `repeated_keys`
-  on purpose (modules are not yet split finely enough). `nil` (the LSP-based
-  checker) is what surfaces `builtins.`-prefix warnings.
+  on purpose (modules are not yet split finely enough). The `builtins.`-prefix
+  and unused-`let` warnings come from nixf: `nixd` shows them in an editor and
+  the `nixf-diagnose` hook fails on them. `nil diagnostics` (what its hook runs)
+  exits 0 on warnings, so it does not catch them.
 - ripsecrets runs on every commit. Public SSH keys that trip it need an inline
   `# pragma: allowlist secret` (see `modules/futureware.nix`).
 
@@ -59,6 +61,8 @@ checks) and consumed by `checks.*.pre-commit-check` and `devShells.default`.
 ```
 flake.nix              outputs: nixosModules, packages, checks, devShells, lib.pre-commit
 modules/*.nix          one file per exported module, name == flake output key
+modules/gpus.nix       shared GPU options/pool logic; imported by nvidia.nix and amd.nix,
+                       deliberately not a flake output
 packages/*.nix         standalone packages (callPackage-compatible)
 data/identities.nix    users + access/signing keys, exposed as module arg
 pre-commit.nix         hook definitions (also a flake output: lib.pre-commit)
@@ -66,9 +70,11 @@ assets/statix.toml     statix config, referenced by path from pre-commit.nix
 ```
 
 Every file in `modules/` is exported explicitly in `flake.nix` — adding a module
-means adding an `import` line there. `data/identities.nix` is exported
-differently: as `_module.args.identities`, so consumer modules can list
-`identities` in their function arguments.
+means adding an `import` line there. The one exception is `modules/gpus.nix`:
+it declares no host-facing switch of its own, so it is reached only through the
+vendor modules that `import` it. `data/identities.nix` is exported differently:
+as `_module.args.identities`, so consumer modules can list `identities` in their
+function arguments.
 
 ## Module conventions
 
@@ -92,16 +98,28 @@ cases where a module must win outright (`nvidia-fabricmanager`, `zpool-trim`).
 before changing defaults there.
 
 **Custom options live in the `fw.*` namespace**: `fw.tpm.hostPath`,
-`fw.hardware.gpus.{enable,devices,pools,resolvedPools,allCudaCapabilities}`.
+`fw.hardware.gpus.{enable,devices,pools,resolvedPools,hasVendor,allCudaCapabilities,pciResolver}`.
 `flake.nix` carries a TODO to collapse this into a single default module gated
 by `mkEnableOption`s under `fw.features` — don't preempt that refactor.
 
+**Shared options belong to exactly one module, declared in the most generic file
+that owns the concept.** `modules/gpus.nix` declares every `fw.hardware.gpus.*`
+option plus the pool resolution, `pciResolver` and the vendor-neutral tooling;
+`nvidia.nix` and `amd.nix` `import` it and add only driver- and vendor-specific
+config, each gated on `enable && hasVendor.<vendor>`. A vendor module must not
+hold anything that is not vendor-specific. Both vendor modules `import`
+`./gpus.nix` by the same path, which is what makes Nix contribute the options
+exactly once — so `gpus.nix` must stay a relative path import in both, and it is
+not exported as a flake output. If it ever needs to be exported, give it a
+`key = "fw-gpus"` so the flake-output copy and the path-imported copy dedup.
+
 **Modules must compose independently, never assume ordering or co-import.**
 When one module wants to react to another, read it defensively:
-`config.fw.hardware.gpus.enable or false`, `config.services.telegraf.enable or false`,
-`config.boot.lanzaboote.enable or false`. `telegraf.nix` and `nvidia.nix` are
-the canonical pair: telegraf adds the `nvidia_smi` input only if the GPU option
-is on, and nvidia adds its telegraf tweaks only if telegraf is enabled.
+`config.services.telegraf.enable or false`, `config.boot.lanzaboote.enable or false`,
+`config.fw.hardware.gpus.hasVendor.nvidia or false`. `telegraf.nix` and
+`nvidia.nix` are the canonical pair: telegraf stays vendor-agnostic, and nvidia
+adds the `nvidia_smi` input and its `nvidia-smi` PATH entry only if telegraf is
+enabled.
 
 **Schedules are UTC.** Timer values (`nix.gc` `00:15`, `nix.optimise` `00:45`,
 ZFS scrub/trim, SMART test windows) are written assuming UTC; keep that
@@ -135,16 +153,27 @@ take `_:` as their argument). The script requires signed commits
   itself because that runs after user setup. It expects a specific on-disk layout
   under `fw.tpm.hostPath` (`tpm.id`, `secrets/ssh_host_ed25519_key.age`) and a
   sibling `../common/secrets/root-password.bin`.
-- `modules/nvidia.nix` imports a **second, separate nixpkgs instance**
+- GPU pool model, in `modules/gpus.nix`: declare `devices`
+  (uuid/model/cudaCapability/powerLimit/compute) and `pools` (names → device
+  names); `resolvedPools` derives `CUDA_VISIBLE_DEVICES`/`NVIDIA_VISIBLE_DEVICES`
+  from the sorted UUIDs of the pool's NVIDIA cards (empty for an all-AMD pool,
+  since both variables are meaningless to ROCm) and exposes `applyCudaArches` to
+  rebuild a package for a pool's architectures only when `needsRebuild`. Only
+  `compute = true` GPUs contribute build architectures; `allCudaCapabilities`
+  includes all of them so stress testing works. `enable` defaults to "the device
+  set is non-empty", so a host never sets it directly; a host that must switch
+  GPUs off (a livecd built from a real host config) uses `lib.mkForce false`.
+  `gpus.nix` installs the `nvtopPackages` variant matching the vendors present
+  (`.nvidia` or `.amd` for a single-vendor host, `.full` only for a mixed host —
+  the per-vendor variants are blind to other vendors and two nvtops would
+  collide), and enables `hardware.graphics` and
+  `hardware.enableRedistributableFirmware`, both needed by any vendor.
+- `modules/stress.nix` imports a **second, separate nixpkgs instance**
   (`cudaPkgs`) with `cudaSupport = true` so CUDA rebuilds stay scoped to
-  `gpu-burn` instead of recompiling everything. Its pool model: declare
-  `devices` (uuid/model/cudaCapability/powerLimit/compute) and `pools` (names →
-  device names); `resolvedPools` derives `CUDA_VISIBLE_DEVICES`/`NVIDIA_VISIBLE_DEVICES`
-  from sorted UUIDs and exposes `applyCudaArches` to rebuild a package for a
-  pool's architectures only when `needsRebuild`. Only `compute = true` GPUs
-  contribute build architectures; `allCudaCapabilities` includes all of them so
-  stress testing works. It pins `hardware.nvidia.open = false` (stability on
-  Ampere) and needs `hardware.enableRedistributableFirmware` for GSP firmware.
+  `gpu-burn` instead of recompiling everything.
+- `modules/nvidia.nix` is the driver half: it pins `hardware.nvidia.open = false`
+  (stability on Ampere), adds the driver's own firmware, and sets power limits
+  per card with `nvidia-smi`. Cards are identified by UUID, never by PCI address.
 - `modules/boot.nix` takes a module argument `rootDisks ? [ ]` (passed by the
   consumer when importing the module) and mirrors `/boot1` to `/boot2..N` via a
   hourly `efi-mirror` unit, with a sentinel-file check that exits 66 rather than

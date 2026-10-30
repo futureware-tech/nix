@@ -5,24 +5,22 @@
   ...
 }:
 {
+  imports = [ ./gpus.nix ];
+
   # AMD side of fw.hardware.gpus. Whether a host needs it is not a separate
-  # switch: it follows from the cards listed in fw.hardware.gpus.devices, so a
-  # host cannot claim an AMD card and forget to install the tooling for it.
+  # switch: it follows from the vendors of the cards listed in
+  # fw.hardware.gpus.devices, so a host cannot claim an AMD card and forget to
+  # install the tooling for it. The shared option declarations, pool resolution
+  # and vendor-neutral tooling live in modules/gpus.nix.
   #
-  # Depends on modules/nvidia.nix, which declares fw.hardware.gpus.devices, but
-  # reads the vendor list defensively so it can be imported on its own.
-  config = lib.mkIf (config.fw.hardware.gpus.hasVendor.amd or false) {
+  # hasVendor is only ever set true while `enable` holds, so the `enable` test is
+  # redundant on its own; keep both so the gate names the option it mirrors.
+  config = lib.mkIf (config.fw.hardware.gpus.enable && config.fw.hardware.gpus.hasVendor.amd) {
     environment.systemPackages = with pkgs.rocmPackages; [
       # rocm-smi reads the same sysfs the amdgpu driver publishes, so it works
       # without the full ROCm runtime.
       rocm-smi
       rocminfo
-
-      # nvtopPackages.nvidia cannot see AMD cards and .amd cannot see NVIDIA
-      # ones, so a host with both vendors gets the one variant that sees both.
-      # Two nvtops in one environment would collide, so modules/nvidia.nix
-      # withholds its own copy whenever an AMD card is present.
-      pkgs.nvtopPackages.full
     ];
   };
 }

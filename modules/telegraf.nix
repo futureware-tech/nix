@@ -1,7 +1,6 @@
 {
   pkgs,
   config,
-  lib,
   ...
 }:
 {
@@ -91,19 +90,17 @@
         temp = { };
 
         internal = { };
-      }
-      // lib.optionalAttrs (config.fw.hardware.gpus.enable or false) {
-        nvidia_smi = { };
       };
     };
   };
 
+  # Vendor-specific inputs (nvidia_smi and the nvidia-smi PATH entry) are added
+  # by modules/nvidia.nix, the only place that knows where the driver lives.
   systemd.services.telegraf.path = [
     pkgs.lm_sensors
     pkgs.smartmontools
     pkgs.nvme-cli
-  ]
-  ++ lib.optional (config.fw.hardware.gpus.enable or false) config.hardware.nvidia.package.bin;
+  ];
 
   users.users.telegraf.extraGroups = [ "disk" ];
 }

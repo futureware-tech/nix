@@ -31,6 +31,7 @@
     nixfmt.enable = true;
     deadnix.enable = true;
     nil.enable = true;
+    nixf-diagnose.enable = true;
     statix = {
       enable = true;
       settings.config = "${./assets/statix.toml}";
