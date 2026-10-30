@@ -40,8 +40,6 @@ lib.mkMerge [
       };
     };
 
-    boot.initrd.systemd.enable = true;
-
     systemd.services.efi-mirror = {
       enable = builtins.length rootDisks > 1;
       script = "exec ${mirrorEfi}";
