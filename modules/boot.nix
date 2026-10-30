@@ -6,6 +6,25 @@
   rootDisks ? [ ],
   ...
 }:
+let
+  inherit (config.boot.loader.efi) efiSysMountPoint;
+
+  # ESPs of the extra boot disks, in bay order.
+  mirrorTargets = map (index: "/boot${toString index}") (lib.range 2 (builtins.length rootDisks));
+
+  # Copies the bootloader from the first ESP to the others.
+  mirrorEfi = pkgs.writeShellScript "efi-mirror" ''
+    set -eu
+
+    if [ ! -r ${efiSysMountPoint}/EFI/BOOT/BOOTX64.EFI ] && [ ! -r ${efiSysMountPoint}/EFI/Linux ]; then
+      echo "Boot sentinel file missing, refusing to mirror" >&2
+      exit 66
+    fi
+    ${lib.concatMapStringsSep "\n" (
+      target: "${pkgs.rsync}/bin/rsync -avz --delete ${efiSysMountPoint}/ ${lib.escapeShellArg target}"
+    ) mirrorTargets}
+  '';
+in
 lib.mkMerge [
   {
     boot.loader = {
@@ -25,18 +44,7 @@ lib.mkMerge [
 
     systemd.services.efi-mirror = {
       enable = builtins.length rootDisks > 1;
-      script = ''
-        set -eu
-
-        if [ -r /boot1/EFI/BOOT/BOOTX64.EFI ] || [ -r /boot1/EFI/Linux ]; then
-          for target in /boot{2..${toString (builtins.length rootDisks)}}; do
-            ${pkgs.rsync}/bin/rsync -avz --delete /boot1/ "$target"
-          done
-        else
-          echo "Boot sentinel file missing, refusing to mirror" >&2
-          exit 66
-        fi
-      '';
+      script = "exec ${mirrorEfi}";
       serviceConfig = {
         Type = "oneshot";
       };
@@ -47,9 +55,12 @@ lib.mkMerge [
       requires = [ "local-fs.target" ];
     };
 
-    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (
-      builtins.length rootDisks > 1
-    ) "${pkgs.systemd}/bin/systemctl start efi-mirror.service";
+    # Can't simply "systemctl start efi-mirror":
+    # - it's missing during initial install
+    # - it's still disabled during upgrade from 1-disk to 2-disk configuration
+    boot.loader.systemd-boot.extraInstallCommands = lib.mkIf (builtins.length rootDisks > 1) ''
+      ${mirrorEfi} || echo "warning: failed to mirror the ESPs, the efi-mirror timer will retry"
+    '';
   }
 
   # Use Lanzaboote's native support for mirroring bootloader files to other ESPs
