@@ -36,6 +36,8 @@ in
 
     hardware.nvidia = {
       datacenter.enable = true;
+      # Pin to the version which still supports P1000 (NVENC).
+      branch = "dc_580";
       open = false; # More stable for Ampere.
 
       powerManagement.enable = false;
