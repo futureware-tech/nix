@@ -1,5 +1,23 @@
 {
+  # Only a module function gets `pkgs`, and the commit-message hook needs it to
+  # name its own binary and config by absolute store path.
+  imports = [
+    (
+      { pkgs, ... }:
+      {
+        # Commit messages must be canonical: a Conventional Commits subject plus
+        # an optional body. The rules live in ./.gitlint, passed explicitly so
+        # every repo importing these hooks gets the same policy instead of
+        # gitlint's stock defaults (which demand a body). A repo wanting its own
+        # rules overrides hooks.gitlint.entry.
+        hooks.gitlint.entry = "${pkgs.gitlint}/bin/gitlint -C ${./.gitlint} --staged --msg-filename";
+      }
+    )
+  ];
+
   hooks = {
+    gitlint.enable = true;
+
     check-added-large-files.enable = true;
     check-case-conflicts.enable = true;
     check-executables-have-shebangs.enable = true;

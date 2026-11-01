@@ -7,14 +7,14 @@ dotfiles) import as a flake input.
 
 ## Commands
 
-| Task                                   | Command                                                 |
-| -------------------------------------- | ------------------------------------------------------- |
-| Verify a change (CI does exactly this) | `nix flake check`                                       |
-| Enter dev shell (installs git hooks)   | `nix develop`                                           |
-| Update pinned inputs                   | `nix flake update` (commit message: `nix flake update`) |
-| Build the shipped package              | `nix build .#git-safe-sync`                             |
-| Nix lint autofix                       | `statix fix` (inside `nix develop`)                     |
-| Check every system (incl. aarch64)     | `nix flake check --all-systems`                         |
+| Task                                   | Command                                                       |
+| -------------------------------------- | ------------------------------------------------------------- |
+| Verify a change (CI does exactly this) | `nix flake check`                                             |
+| Enter dev shell (installs git hooks)   | `nix develop`                                                 |
+| Update pinned inputs                   | `nix flake update` (message: `chore(deps): nix flake update`) |
+| Build the shipped package              | `nix build .#git-safe-sync`                                   |
+| Nix lint autofix                       | `statix fix` (inside `nix develop`)                           |
+| Check every system (incl. aarch64)     | `nix flake check --all-systems`                               |
 
 `nix flake check` silently omits the non-native systems (`aarch64-linux`,
 `aarch64-darwin`, `x86_64-darwin`) unless `--all-systems` is passed — relevant
@@ -55,6 +55,15 @@ checks) and consumed by `checks.*.pre-commit-check` and `devShells.default`.
   exits 0 on warnings, so it does not catch them.
 - ripsecrets runs on every commit. Public SSH keys that trip it need an inline
   `# pragma: allowlist secret` (see `modules/futureware.nix`).
+- Commit messages are enforced by the `gitlint` hook at the `commit-msg` stage:
+  Conventional Commits subject (`<type>[optional scope][!]: <description>`),
+  with gitlint's own limits (subject 72, body 80) and default type set. Rules
+  live in `.gitlint` at the repo root, but the hook passes fw_nix's own copy by
+  absolute store path, so consumer repos get the same policy without copying
+  the file; override `hooks.gitlint.entry` to point somewhere else. Only merge,
+  revert and fixup commits are exempt, because git writes those verbatim; a
+  `nix flake update` commit has to be phrased as a Conventional Commit like any
+  other.
 
 ## Layout
 
@@ -66,6 +75,7 @@ modules/gpus.nix       shared GPU options/pool logic; imported by nvidia.nix and
 packages/*.nix         standalone packages (callPackage-compatible)
 data/identities.nix    users + access/signing keys, exposed as module arg
 pre-commit.nix         hook definitions (also a flake output: lib.pre-commit)
+.gitlint               commit-message policy, referenced by path from pre-commit.nix
 assets/statix.toml     statix config, referenced by path from pre-commit.nix
 ```
 

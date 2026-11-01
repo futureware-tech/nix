@@ -1,0 +1,24 @@
+# Canonical commit messages for FutureWare repositories.
+#
+# Passed to gitlint by absolute store path from pre-commit.nix, so consumer
+# repos get this policy without owning a copy of the file.
+#
+#   <type>[optional scope][!]: <description>
+#
+#   Optional body explaining why the change exists, not what the diff says.
+#
+# Allowed types: build, chore, ci, docs, feat, fix, perf, refactor, revert,
+# style, test (gitlint's own default set). Subject max 72 chars, body lines
+# max 80, both gitlint's defaults too.
+
+[general]
+# gitlint is moving from regex 'match' to 'search' semantics; opting in now
+# keeps this file meaning the same thing after that upgrade.
+regex-style-search = true
+# A one-line subject is legitimate for a small change. Requiring a body would
+# only teach people to pad it with noise.
+ignore = body-is-missing, body-min-length
+contrib = contrib-title-conventional-commits
+# Merge, revert, fixup and squash commits are exempt by default, which is what
+# we want: git and our own workflow produce those verbatim, and judging them
+# would only block the workflow.

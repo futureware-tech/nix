@@ -48,10 +48,12 @@
       lib.pre-commit = import ./pre-commit.nix;
 
       checks = eachSystem (system: {
-        pre-commit-check = git-hooks.lib.${system}.run {
-          src = ./.;
-          inherit (self.lib.pre-commit) hooks;
-        };
+        pre-commit-check = git-hooks.lib.${system}.run (
+          self.lib.pre-commit
+          // {
+            src = ./.;
+          }
+        );
       });
 
       packages = eachSystem (
