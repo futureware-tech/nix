@@ -63,7 +63,11 @@ checks) and consumed by `checks.*.pre-commit-check` and `devShells.default`.
   the file; override `hooks.gitlint.entry` to point somewhere else. Only merge,
   revert and fixup commits are exempt, because git writes those verbatim; a
   `nix flake update` commit has to be phrased as a Conventional Commit like any
-  other.
+  other. A consumer must pass `fw_nix.lib.pre-commit` _whole_ to
+  `git-hooks.lib.<system>.run` (`fw_nix.lib.pre-commit // { src = ./.; }`), not
+  just `hooks = fw_nix.lib.pre-commit.hooks`: the `-C .gitlint` entry lives in
+  the module's `imports`, so taking `.hooks` alone silently falls back to
+  gitlint's stock defaults, which demand a body.
 
 ## Layout
 
