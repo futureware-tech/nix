@@ -46,8 +46,10 @@ rec {
     artem = {
       email = "dot.doom@gmail.com";
       access = {
-        "ssh@mars".publicKey =
+        "ssh@mars-old".publicKey =
           "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJg7zQ4H0LQeQcILZBwCzQ+MYKtCgKm7HPe9oFeoyprKZXAvpm+HDHtaYdU39JF9f+nvRztzXuMhgETAQMAQCkc=";
+        "ssh@mars".publicKey =
+          "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNTbod2QJoIbMhlKWLSVq0MY/xfsnUVOBPQBQjo/2puaRt6z5SseEOgZIWKTsn7HkAS04d4iPUWOC7KM0ZmmH0c=";
         yubikey-office.publicKey = "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIPAtIXXHm58julnr7S0xzBTM1jN5JkKxOL4JpuWDOa2jAAAABHNzaDo=";
         yubikey-keychain.publicKey = "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIHY1xx0huqV6Mcc2WngYDabITeNUbGamJ8//206MxxVTAAAABHNzaDo=";
         yubikey-safe.publicKey = "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIHzY2eOz+JdaKOpIgZbF5FsZzQy0l8vPJjAQdTpBFGsoAAAABHNzaDo=";
@@ -63,6 +65,10 @@ rec {
 
         # Sign-only keys
         "sign@mars" = {
+          publicKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCUfJs2YefOn8CG1NCLS07a44NupFSNXs2aTLB/fopnXFKpcJzSzfyO8AG67gDta7yNYzWSZ18JXM7A40AevdfM=";
+          namespace = "git";
+        };
+        "sign@mars-old" = {
           publicKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNwSX/Ib6kNzgRKqWfcb3HsAQQo++Gt9KeXSvP6NDk6YQPjDsi+//IiBovgLjQ34El+x8l8y3aYhfIGlCyX7aOM=";
           namespace = "git";
         };
