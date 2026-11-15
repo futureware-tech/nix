@@ -128,6 +128,14 @@ rec {
         };
       };
     };
+    barsick = {
+      email = "barsick@futureware.dev";
+      access = {
+        "barsick@nas".publicKey =
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID0uhV/tABH5lpaJjH+jvNYj9bAa4O63TAT+hWdwCrMK";
+      };
+      sign = { };
+    };
   };
 
   hostKeys = {
