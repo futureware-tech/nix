@@ -105,7 +105,13 @@ let
   ''
   + lib.concatImapStrings (index: path: ''
     SUBSYSTEM=="block", ENV{ID_PATH}=="${path}", ENV{DEVTYPE}=="partition", SYMLINK+="disk/rpool/${toString index}-part%n"
-  '') rootPaths;
+  '') rootPaths
+  + ''
+    # A dm mapping cannot be attributed to the disk underneath (no ID_PATH to
+    # inherit), so just use ID_FS_LABEL and assume that we won't "accidentally"
+    # decrypt a foreign disk with ZFS pool "rpool" on it.
+    SUBSYSTEM=="block", KERNEL=="dm-*", ENV{ID_FS_TYPE}=="zfs_member", ENV{ID_FS_LABEL}=="rpool", SYMLINK+="disk/rpool/%k"
+  '';
 in
 {
   services.zfs = {

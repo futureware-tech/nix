@@ -205,9 +205,15 @@ take `_:` as their argument). The script requires signed commits
   into udev rules — in stage 2 and in the initrd — symlinking every partition of
   the matching disk into `/dev/disk/rpool`, numbered `1..N` like `/boot1 /boot2`
   in `boot.nix`. Whole disks are deliberately not linked: UEFI requires a boot
-  partition, so the root pool always lives on a partition. When such entries exist
-  `boot.zfs.devNodes` points there, so `zpool import -d` can never see a foreign
-  pool with the same name.
+  partition, so the root pool always lives on a partition. When rpool lives
+  inside LUKS containers, the ZFS label sits on the opened device-mapper
+  mapping instead, and no udev match can attribute a virtual dm device to the
+  disk underneath — so the rule links only mappings whose own blkid label
+  declares membership (`ID_FS_TYPE==zfs_member`, `ID_FS_LABEL==rpool`). Swap
+  mappings and containers holding other pools carry no such label and stay
+  invisible, keeping the directory true to the pool it is named for. When such
+  entries exist the pool-specific import directory points at `/dev/disk/rpool`,
+  so `zpool import -d` can never see a foreign pool with the same name.
   `boot.zfs.devNodes` is a _directory_ (passed to `-d`), not a device list, and
   `forceImportRoot` does not resolve duplicate pool names — it only overrides
   in-use/dirty checks. A `rootDisks` entry in another naming scheme (`by-id`,
