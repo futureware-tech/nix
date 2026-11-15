@@ -128,6 +128,14 @@ rec {
         };
       };
     };
+    katarina-agent = {
+      email = "katarina-agent@sheremet.ch";
+      access = {
+        "katarina-agent@dia".publicKey =
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM4bLcT6GIZQNpU4N5ihA0nfkj6cdZYEJgKElgR9dVOm";
+      };
+      sign = { };
+    };
     barsick = {
       email = "barsick@futureware.dev";
       access = {
