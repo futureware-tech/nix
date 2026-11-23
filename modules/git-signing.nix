@@ -96,10 +96,14 @@ in
 
   config = mkIf (cfg != { } && hasGitOption) {
     programs.git.enable = true;
+    # Nested section.subsection shape: newer nixpkgs types programs.git.config
+    # as sections of key/value pairs, so a flat "…path" key no longer fits.
     programs.git.config = lib.listToAttrs (
       lib.mapAttrsToList (dir: trust: {
-        name = "includeIf.\"gitdir:${dir}/\".path";
-        value = signingInclude dir trust;
+        name = "includeIf \"gitdir:${dir}/\"";
+        value = {
+          path = signingInclude dir trust;
+        };
       }) cfg
     );
   };
