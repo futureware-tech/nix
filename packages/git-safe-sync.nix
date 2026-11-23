@@ -2,6 +2,7 @@
   writeShellApplication,
   git,
   coreutils,
+  gnupg,
 }:
 
 writeShellApplication {
@@ -9,6 +10,7 @@ writeShellApplication {
   runtimeInputs = [
     git
     coreutils
+    gnupg
   ];
   text = ''
     set -euo pipefail
