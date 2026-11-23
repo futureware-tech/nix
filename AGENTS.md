@@ -72,10 +72,14 @@ checks) and consumed by `checks.*.pre-commit-check` and `devShells.default`.
 ## Layout
 
 ```
-flake.nix              outputs: nixosModules, packages, checks, devShells, lib.pre-commit
+flake.nix              outputs: nixosModules, homeModules, packages, checks, devShells, lib.pre-commit
 modules/*.nix          one file per exported module, name == flake output key
 modules/gpus.nix       shared GPU options/pool logic; imported by nvidia.nix and amd.nix,
                        deliberately not a flake output
+modules/git-signing.nix      system-wide commit-signature verification (NixOS output)
+modules/git-signing-hm.nix   the same trust for interactive users (homeModules output)
+lib/git-openpgp.nix    shared builder of the read-only GnuPG keyring and its gpg wrapper,
+                       imported by both git-signing modules by relative path
 packages/*.nix         standalone packages (callPackage-compatible)
 data/identities.nix    users + access/signing keys, exposed as module arg
 pre-commit.nix         hook definitions (also a flake output: lib.pre-commit)

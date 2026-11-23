@@ -31,6 +31,7 @@
         tools = import ./modules/tools.nix;
         sshd = import ./modules/sshd.nix;
         git-safe-sync = import ./modules/git-safe-sync.nix;
+        git-signing = import ./modules/git-signing.nix;
         nvidia = import ./modules/nvidia.nix;
         amd = import ./modules/amd.nix;
         stress = import ./modules/stress.nix;
@@ -46,6 +47,8 @@
       };
 
       lib.pre-commit = import ./pre-commit.nix;
+
+      homeModules.git-signing = import ./modules/git-signing-hm.nix;
 
       checks = eachSystem (system: {
         pre-commit-check = git-hooks.lib.${system}.run (
