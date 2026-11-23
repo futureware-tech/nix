@@ -26,6 +26,7 @@ rec {
       user ? null,
     }:
     let
+      isSsh = k: !(k ? armor);
       getEntries =
         u:
         map (
@@ -34,12 +35,30 @@ rec {
             k = u.sign.${name};
           in
           "${u.email} namespaces=\"${k.namespace}\" ${k.publicKey} ${name}"
-        ) (builtins.attrNames u.sign);
+        ) (builtins.filter (name: isSsh u.sign.${name}) (builtins.attrNames u.sign));
     in
     if user == null then
       builtins.concatLists (map getEntries (builtins.attrValues users))
     else
       getEntries users.${user};
+
+  # Armored OpenPGP public keys git may verify commits with, held in `sign`
+  # alongside the SSH signing keys and distinguished by an `armor` attribute.
+  getOpenpgpKeys =
+    {
+      user ? null,
+    }:
+    let
+      getKeys =
+        u:
+        map (name: u.sign.${name}.armor) (
+          builtins.filter (name: u.sign.${name} ? armor) (builtins.attrNames u.sign)
+        );
+    in
+    if user == null then
+      builtins.concatMap getKeys (builtins.attrValues users)
+    else
+      getKeys users.${user};
 
   getKnownHosts = builtins.listToAttrs (
     builtins.concatMap (
@@ -134,7 +153,53 @@ rec {
         "katarina-agent@dia".publicKey =
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM4bLcT6GIZQNpU4N5ihA0nfkj6cdZYEJgKElgR9dVOm";
       };
-      sign = { };
+      sign = {
+        "gpg@dia" = {
+          namespace = "git";
+          armor = ''
+            -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            mDMEavisuhYJKwYBBAHaRw8BAQdAkZo/YmX4IqLgOoKNGVC6GNaW8c4EHiwTn+va
+            Fc3KRJK0K2thdGFyaW5hLWFnZW50IDxrYXRhcmluYS1hZ2VudEBzaGVyZW1ldC5j
+            aD6IkAQTFgoAOBYhBN+1XzbABEL2cICeI3OuM3w2WjErBQJq+Ky6AhsDBQsJCAcC
+            BhUKCQgLAgQWAgMBAh4BAheAAAoJEHOuM3w2WjErXvcA/2pmA5PA7aYeAO2hSwhs
+            iAP81I2GNtwlh8GfKMUefTQ9AQCn1rnVxwzdozWjwMMA5M+9jo1BOUecUrcTekLB
+            wr4FD7g4BGr4rLoSCisGAQQBl1UBBQEBB0DyBulu5H2JuHV0DE/sGA4OpqGvmSHx
+            lCKzQBC04K8CbAMBCAeIeAQYFgoAIBYhBN+1XzbABEL2cICeI3OuM3w2WjErBQJq
+            +Ky6AhsMAAoJEHOuM3w2WjEr/fIBAOZyBdlYxbvbEMflqghLK0bxHMWpo5DwRA68
+            dqHZd3T3AQCC0uYIpfiKGeJP7AN3hm50H29LrqYMj4Ca1wC8jkdZDA==
+            =UoYr
+            -----END PGP PUBLIC KEY BLOCK-----
+          '';
+        };
+      };
+    };
+    artem-agent = {
+      email = "artem-agent@sheremet.ch";
+      access = {
+        "artem-agent@deimos".publicKey =
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOeWKfoLAhYa0I59dzwGMli8i//Wmr7DxPSd+2w/iTmV";
+      };
+      sign = {
+        "gpg@deimos" = {
+          namespace = "git";
+          armor = ''
+            -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            mDMEaviXAxYJKwYBBAHaRw8BAQdAc6aVdplsB8RnlGiLhzywrmPHqjoMh7zyF3Q3
+            kQe2VSq0JWFydGVtLWFnZW50IDxhcnRlbS1hZ2VudEBzaGVyZW1ldC5jaD6IkAQT
+            FgoAOBYhBMGHlMFPFUBMAvwSjI6V6WSFcBUiBQJq+JcDAhsDBQsJCAcCBhUKCQgL
+            AgQWAgMBAh4BAheAAAoJEI6V6WSFcBUiP1oA/Aja+O20NgqgTrAW34kFCyYqaEHT
+            OE7SkiN8f2VJpeNQAP0Z33jI65NqpZLfSWHNqiq4EI8hSD6rVqxAY5AKZrhCCLg4
+            BGr4lwMSCisGAQQBl1UBBQEBB0Bb+vN1JFAOGZUZyuLMAnDlIjidOFPHoK4utdiD
+            XJniVgMBCAeIeAQYFgoAIBYhBMGHlMFPFUBMAvwSjI6V6WSFcBUiBQJq+JcDAhsM
+            AAoJEI6V6WSFcBUi5KMA/Rab1IFdkir22WjYPzLbTspV9HtscY+s06860yFvkuo/
+            AP9ACfZoa1EqIl2IYxKtGg0rINilvLTfrwMbgVneJ3uLDA==
+            =UgV2
+            -----END PGP PUBLIC KEY BLOCK-----
+          '';
+        };
+      };
     };
     barsick = {
       email = "barsick@futureware.dev";
